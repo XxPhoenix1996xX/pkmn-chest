@@ -11,6 +11,7 @@
 #include "loader.h"
 #include "loading.h"
 #include "manager.h"
+#include "ndsHeader.h"
 #include "nitrofs.h"
 #include "sound.h"
 
@@ -63,6 +64,11 @@ int main(int argc, char **argv) {
 	showLoadingLogo();
 
 	loadFont();
+	std::vector<u16> buffer;
+	std::string title;
+	getIconTitle("sd:/_roms/DS/Pokemon Platinum Version [fps].nds", buffer, title);
+	drawImage(0, 0, 32, 32, buffer, true);
+	printText(title, 32, 8, true);
 	Config::loadConfig();
 	Lang::loadLangStrings(Config::lang);
 	printTextCentered(Lang::loading, 0, 32, false);

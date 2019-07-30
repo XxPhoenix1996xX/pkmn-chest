@@ -26,6 +26,14 @@
 #include <vector>
 
 /*
+ * Checks if a file name ends with an extenstion list from a set in a vector
+ * const std::string& name is the file name
+ * const std::vector<std::string> extensionList is the list of valid extensions
+ * Returns true if the file's extenstion matches one in the list
+ */
+bool nameEndsWith(const std::string& name, const std::vector<std::string> extensionList);
+
+/*
  * Browse for a file
  * const std::vector<std::string>& extensionList is the extensions to show
  * bool directoryNavigation is whether to allow changing folders
