@@ -61,12 +61,11 @@ void PK4::crypt(void) {
 
 PK4::PK4(u8* dt, bool ekx, bool party) {
 	length = party ? 236 : 136;
-	data   = new u8[length];
+	data = new u8[length];
 	std::fill_n(data, length, 0);
 
 	std::copy(dt, dt + length, data);
-	if(ekx)
-		decrypt();
+	if(ekx)	decrypt();
 }
 
 std::shared_ptr<PKX> PK4::clone(void) {
@@ -260,7 +259,6 @@ u8 PK4::iv(u8 stat) const {
 	u32 buffer = *(u32*)(data + 0x38);
 	return (u8)((buffer >> 5 * stat) & 0x1F);
 }
-
 void PK4::iv(u8 stat, u8 v) {
 	u32 buffer = *(u32*)(data + 0x38);
 	buffer &= ~(0x1F << 5 * stat);
@@ -542,12 +540,13 @@ void PK4::hpType(u8 v) {
 u16 PK4::TSV(void) const {
 	return (TID() ^ SID()) >> 3;
 }
+
 u16 PK4::PSV(void) const {
 	return ((PID() >> 16) ^ (PID() & 0xFFFF)) >> 3;
 }
 
 u8 PK4::level(void) const {
-	u8 i      = 1;
+	u8 i = 1;
 	u8 xpType = expType();
 	while(experience() >= expTable(i, xpType) && ++i < 100);
 	return i;
@@ -630,7 +629,7 @@ std::shared_ptr<PKX> PK4::next(void) const {
 
 	std::shared_ptr<PKX> pk5 = std::make_shared<PK5>(dt);
 
-	time_t t              = time(NULL);
+	time_t t = time(NULL);
 	struct tm* timeStruct = gmtime((const time_t*)&t);
 
 	pk5->otFriendship(70);
@@ -681,7 +680,6 @@ int PK4::partyCurrHP(void) const {
 	}
 	return *(u16*)(data + 0x8E);
 }
-
 void PK4::partyCurrHP(u16 v) {
 	if(length != 136) {
 		*(u16*)(data + 0x8E) = v;
@@ -694,7 +692,6 @@ int PK4::partyStat(const u8 stat) const {
 	}
 	return *(u16*)(data + 0x90 + stat * 2);
 }
-
 void PK4::partyStat(const u8 stat, u16 v) {
 	if(length != 136) {
 		*(u16*)(data + 0x90 + stat * 2) = v;
@@ -707,7 +704,6 @@ int PK4::partyLevel() const {
 	}
 	return *(data + 0x8C);
 }
-
 void PK4::partyLevel(u8 v) {
 	if(length != 136) {
 		*(data + 0x8C) = v;

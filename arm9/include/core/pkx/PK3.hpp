@@ -1,51 +1,25 @@
-/*
- *   This file is part of PKSM
- *   Copyright (C) 2016-2019 Bernardo Giordano, Admiral Fish, piepie62
- *
- *   This program is free software: you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation, either version 3 of the License, or
- *   (at your option) any later version.
- *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
- *
- *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
- *
- *   Additional Terms 7.b and 7.c of GPLv3 apply to this file:
- *       * Requiring preservation of specified reasonable legal notices or
- *         author attributions in that material or in the Appropriate Legal
- *         Notices displayed by works containing it.
- *       * Prohibiting misrepresentation of the origin of that material,
- *         or requiring that modified versions of such material be marked in
- *         reasonable ways as different from the original version.
- */
+#ifndef PK3_HPP
+#define PK3_HPP
 
-#ifndef PK4_HPP
-#define PK4_HPP
-
-#include "PK5.hpp"
+#include "PK4.hpp"
 #include "PKX.hpp"
 #include "time.h"
 
-class PK4 : public PKX {
+class PK3 : public PKX {
 protected:
-	static constexpr u8 beasts[4]  = {251, 243, 244, 245};
-
 	void shuffleArray(u8 sv) override;
 	void crypt(void) override;
-
+private:
+	bool japanese(void) const;
+	int swapBits(int value, int p1, int p2) const;
 public:
-	PK4() {
-		length = 136;
+	PK3() {
+		length = 80;
 		data = new u8[length];
 		std::fill_n(data, length, 0);
 	}
-	PK4(u8* dt, bool ekx = false, bool party = false);
-	virtual ~PK4() { delete[] data; };
+	PK3(u8* dt, bool ekx = false, bool party = false);
+	virtual ~PK3() { delete[] data; };
 
 	std::shared_ptr<PKX> clone(void) override;
 
@@ -63,28 +37,43 @@ public:
 
 	u32 PID(void) const override;
 	void PID(u32 v) override;
-	u16 sanity(void) const override;
-	void sanity(u16 v) override;
-	u16 checksum(void) const override;
-	void checksum(u16 v) override;
-	u16 species(void) const override;
-	void species(u16 v) override;
-	u16 heldItem(void) const override;
-	void heldItem(u16 v) override;
 	u16 TID(void) const override;
 	void TID(u16 v) override;
 	u16 SID(void) const override;
 	void SID(u16 v) override;
+	std::string nickname(void) const override;
+	void nickname(const std::string& v) override;
+	u8 language(void) const override;
+	void language(u8 v) override;
+	bool flagIsBadEgg(void) const;
+	void flagIsBadEgg(bool v);
+	bool flagHasSpecies(void) const;
+	void flagHasSpecies(bool v);
+	bool flagIsEgg(void) const;
+	void flagIsEgg(bool v);
+	std::string otName(void) const override;
+	void otName(const std::string& v) override;
+	u16 markValue(void) const override;
+	void markValue(u16 v) override;
+	u16 checksum(void) const override;
+	void checksum(u16 v) override;
+	u16 sanity(void) const override;
+	void sanity(u16 v) override;
+
+	u16 speciesID3(void) const;
+	void speciesID3(u16 v);
+	u16 species(void) const override;
+	void species(u16 v) override;
+	u16 heldItem(void) const override;
+	void heldItem(u16 v) override;
 	u32 experience(void) const override;
 	void experience(u32 v) override;
 	u8 otFriendship(void) const override;
 	void otFriendship(u8 v) override;
 	u8 ability(void) const override;
 	void ability(u8 v) override;
-	u16 markValue(void) const override;
-	void markValue(u16 v) override;
-	u8 language(void) const override;
-	void language(u8 v) override;
+	bool abilityBit(void) const;
+	void abilityBit(bool v);
 	u8 ev(u8 ev) const override;
 	void ev(u8 ev, u8 v) override;
 	u8 contest(u8 contest) const override;
@@ -119,13 +108,9 @@ public:
 	bool nPokemon(void) const;
 	void nPokemon(bool v);
 
-	std::string nickname(void) const override;
-	void nickname(const std::string& v) override;
 	u8 version(void) const override;
 	void version(u8 v) override;
 
-	std::string otName(void) const override;
-	void otName(const std::string& v) override;
 	u8 eggYear(void) const override;
 	void eggYear(u8 v) override;
 	u8 eggMonth(void) const override;

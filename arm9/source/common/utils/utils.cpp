@@ -101,11 +101,40 @@ void StringUtils::setString(u8* data, const std::string& v, int ofs, int len, ch
 	setString(data, UTF8toUTF16(v), ofs, len, terminator, padding);
 }
 
+std::string StringUtils::getString3(const u8* data, int ofs, int len, bool jp) {
+	std::string output;
+	for(u8 i = 0; i < len; i++) {
+		u8 val = data[ofs + i];
+
+		// Convert to Unicode
+		#define table (jp ? StringUtils::G3_JP : StringUtils::G3_EN)
+		char c;
+		if(val >= table.size())	c = (char)0xFF;
+		else	c = table[val];
+
+		if (c == 0xFF)	break; // Stop if Terminator/Invalid
+
+		output + c;
+	}
+	return output;
+}
+
+void StringUtils::setString3(u8* data, const std::string& v, int ofs, int len, bool jp) {
+	for (int i = 0; i < len && i < (int)v.length(); i++) {
+		#define table (jp ? StringUtils::G3_JP : StringUtils::G3_EN)
+		u8 val = *std::find(table.begin(), table.end(), v[i]);
+
+		if (val == 0xFF)	break; // End
+		data[i] = val;
+	}
+	if (len > 0)
+		data[len - 1] = 0xFF;
+}
+
 std::string StringUtils::getString4(const u8* data, int ofs, int len) {
 	std::string output;
 	len *= 2;
-	u16 temp;
-	u16 codepoint;
+	u16 temp, codepoint;
 	for(u8 i = 0; i < len; i += 2) {
 		temp = *(u16*)(data + ofs + i);
 		if(temp == 0xFFFF)

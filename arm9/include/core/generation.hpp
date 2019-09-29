@@ -30,6 +30,7 @@
 #include <string>
 
 enum class Generation {
+	THREE,
 	FOUR,
 	FIVE,
 	SIX,
