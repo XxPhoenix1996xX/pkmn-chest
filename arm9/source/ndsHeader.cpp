@@ -5,34 +5,22 @@
 #include "colors.h"
 #include "utils.hpp"
 
-void loadIcon(u8 *tilesSrc, u16 *palSrc, std::vector<u16> &imageBuffer, bool twl) {
+void loadIcon(NDSBanner &ndsBanner, std::vector<u16> &imageBuffer) {
+	imageBuffer = std::vector<u16>(32*32);
+
 	// Load pixels
-	int PY = 32;
-	if(twl)	PY *= 8;
-	const int PX = 32;
-	imageBuffer.reserve(PX*PY);
-	const int TILE_SIZE_Y = 8;
-	const int TILE_SIZE_X = 8;
-	int index = 0;
-	for (int tileY = 0; tileY < PY / TILE_SIZE_Y; ++tileY) {
-		for (int tileX = 0; tileX < PX / TILE_SIZE_X; ++tileX) {
-			for (int pY = 0; pY < TILE_SIZE_Y; pY++) {
-				for (int pX = 0; pX < TILE_SIZE_X;pX+=2) {
-					if((tilesSrc[index]&0xF) == 0) {
-						imageBuffer[pX + (tileX * TILE_SIZE_X) + PX * (pY + tileY * TILE_SIZE_Y)] = 0<<15;
-					} else {
-						imageBuffer[pX + (tileX * TILE_SIZE_X) + PX * (pY + tileY * TILE_SIZE_Y)] = palSrc[tilesSrc[index]&0xF] | BIT(15);
-					}
-					if((tilesSrc[index]>>4) == 0) {
-						imageBuffer[pX+1 + (tileX * TILE_SIZE_X) + PX * (pY + tileY * TILE_SIZE_Y)] = 0<<15;
-					} else {
-						imageBuffer[pX+1 + (tileX * TILE_SIZE_X) + PX * (pY + tileY * TILE_SIZE_Y)] = palSrc[tilesSrc[index]>>4] | BIT(15);
-					}
-					index++;
+	for (size_t row = 0; row < 4; row++) {
+		for (size_t col = 0; col < 4; col ++) {
+			for (size_t y = 0; y < 8; y++) {
+				for (size_t x = 0; x < 8; x += 2) {
+					imageBuffer[((row*8+y)*32)+col*8+x] = ndsBanner.palette[ndsBanner.icon[row][col][y][x/2] & 0xF] | BIT(15);
+					imageBuffer[((row*8+y)*32)+col*8+x+1] = ndsBanner.palette[ndsBanner.icon[row][col][y][x/2] >> 4] | BIT(15);
 				}
 			}
 		}
 	}
+
+	drawImage(0, 0, 32, 32, imageBuffer, false);
 }
 
 void getIconTitle(std::string name, std::vector<u16> &imageBuffer, std::string &title) {
@@ -49,11 +37,7 @@ void getIconTitle(std::string name, std::vector<u16> &imageBuffer, std::string &
 		fread(&ndsBanner, sizeof(ndsBanner), 1, rom); // Read the banner
 
 		// Icon
-		if (ndsBanner.version == NDS_BANNER_VER_DSi) {
-			loadIcon(ndsBanner.dsi_icon[0], ndsBanner.dsi_palette[0], imageBuffer, true);
-		} else {
-			loadIcon(ndsBanner.icon, ndsBanner.palette, imageBuffer, false);
-		}
+		loadIcon(ndsBanner, imageBuffer);
 
 		// Title
 		title = StringUtils::UTF16toUTF8((char16_t*)ndsBanner.titles[0]);
