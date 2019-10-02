@@ -19,8 +19,6 @@ void loadIcon(NDSBanner &ndsBanner, std::vector<u16> &imageBuffer) {
 			}
 		}
 	}
-
-	drawImage(0, 0, 32, 32, imageBuffer, false);
 }
 
 void getIconTitle(std::string name, std::vector<u16> &imageBuffer, std::string &title) {
