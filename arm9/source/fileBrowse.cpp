@@ -20,22 +20,22 @@
 
 ------------------------------------------------------------------*/
 
-#include "fileBrowse.h"
+#include "fileBrowse.hpp"
 #include <algorithm>
 #include <dirent.h>
 #include <fat.h>
 #include <strings.h>
 #include <unistd.h>
 
-#include "flashcard.h"
-#include "colors.h"
-#include "graphics.h"
-#include "input.h"
-#include "langStrings.h"
-#include "loader.h"
-#include "manager.h"
-#include "cardSaves.h"
-#include "sound.h"
+#include "flashcard.hpp"
+#include "colors.hpp"
+#include "graphics.hpp"
+#include "input.hpp"
+#include "langStrings.hpp"
+#include "loader.hpp"
+#include "manager.hpp"
+#include "cardSaves.hpp"
+#include "sound.hpp"
 #include "utils.hpp"
 
 #define ENTRIES_PER_SCREEN 11
@@ -112,25 +112,28 @@ void getDirectoryContents(std::vector<DirEntry>& dirContents) {
 void showDirectoryContents(const std::vector<DirEntry>& dirContents, int startRow) {
 	getcwd(path, PATH_MAX);
 
-	// Draw background
-	drawImage(0, 0, fileBrowseBgData.width, fileBrowseBgData.height, fileBrowseBg, false);
-
 	// Print path
+	drawImageFromSheet(0, 0, fileBrowseBgData.width, 17, fileBrowseBg, fileBrowseBgData.width, 0, 0, false);
 	printTextMaxW(path, 250, 1, 5, 0, false);
 
 	// Print directory listing
-	for(int i=0;i < ((int)dirContents.size() - startRow) && i < ENTRIES_PER_SCREEN; i++) {
-		std::u16string name = StringUtils::UTF8toUTF16(dirContents[i + startRow].name);
+	for(int i=0;i < ENTRIES_PER_SCREEN; i++) {
+		// Clear row
+		drawImageFromSheet(10, i*16+16, 246, 16, fileBrowseBg, fileBrowseBgData.width, 10, i*16+16, false);
 
-		// Trim to fit on screen
-		bool addEllipsis = false;
-		while(getTextWidth(name) > 227) {
-			name = name.substr(0, name.length()-1);
-			addEllipsis = true;
+		if(i < ((int)dirContents.size() - startRow)) {
+			std::u16string name = StringUtils::UTF8toUTF16(dirContents[i + startRow].name);
+
+			// Trim to fit on screen
+			bool addEllipsis = false;
+			while(getTextWidth(name) > 227) {
+				name = name.substr(0, name.length()-1);
+				addEllipsis = true;
+			}
+			if(addEllipsis)	name += StringUtils::UTF8toUTF16("...");
+
+			printTextTinted(name, GRAY, 10, i*16+16, false, true);
 		}
-		if(addEllipsis)	name += StringUtils::UTF8toUTF16("...");
-
-		printTextTinted(name, GRAY, 10, i*16+16, false, true);
 	}
 }
 
@@ -209,26 +212,28 @@ bool updateSlot1Text(int &cardWait, bool valid) {
 }
 
 void showTopMenu(std::vector<topMenuItem> topMenuContents) {
-	// Draw background
-	drawImage(0, 0, fileBrowseBgData.width, fileBrowseBgData.height, fileBrowseBg, false);
+	for(unsigned i=0;i<ENTRIES_PER_SCREEN;i++) {
+		// Clear row
+		drawImageFromSheet(10, i*16+16, 246, 16, fileBrowseBg, fileBrowseBgData.width, 10, i*16+16, false);
 
-	for(unsigned i=0;i<topMenuContents.size() && i<ENTRIES_PER_SCREEN;i++) {
-		if(topMenuContents[i+tmScreenOffset].name == "fat:")	drawFatText(i, topMenuContents[i+tmScreenOffset].valid);
-		else if(topMenuContents[i+tmScreenOffset].name == "sd:")	drawSdText(i, topMenuContents[i+tmScreenOffset].valid);
-		else if(topMenuContents[i+tmScreenOffset].name == "card:")	drawSlot1Text(i, topMenuContents[i+tmScreenOffset].valid);
-		else {
-			std::u16string name = StringUtils::UTF8toUTF16(topMenuContents[i+tmScreenOffset].name);
-			name = name.substr(name.find_last_of(StringUtils::UTF8toUTF16("/"))+1); // Remove path to the file
+		if(i<topMenuContents.size()) {
+			if(topMenuContents[i+tmScreenOffset].name == "fat:")	drawFatText(i, topMenuContents[i+tmScreenOffset].valid);
+			else if(topMenuContents[i+tmScreenOffset].name == "sd:")	drawSdText(i, topMenuContents[i+tmScreenOffset].valid);
+			else if(topMenuContents[i+tmScreenOffset].name == "card:")	drawSlot1Text(i, topMenuContents[i+tmScreenOffset].valid);
+			else {
+				std::u16string name = StringUtils::UTF8toUTF16(topMenuContents[i+tmScreenOffset].name);
+				name = name.substr(name.find_last_of(StringUtils::UTF8toUTF16("/"))+1); // Remove path to the file
 
-			// Trim to fit on screen
-			bool addEllipsis = false;
-			while(getTextWidth(name) > 227) {
-				name = name.substr(0, name.length()-1);
-				addEllipsis = true;
+				// Trim to fit on screen
+				bool addEllipsis = false;
+				while(getTextWidth(name) > 227) {
+					name = name.substr(0, name.length()-1);
+					addEllipsis = true;
+				}
+				if(addEllipsis)	name += StringUtils::UTF8toUTF16("...");
+
+				printTextTinted(name, topMenuContents[i+tmScreenOffset].valid ? GRAY : RGB::RED, 10, i*16+16, false, true);
 			}
-			if(addEllipsis)	name += StringUtils::UTF8toUTF16("...");
-
-			printTextTinted(name, topMenuContents[i+tmScreenOffset].valid ? GRAY : RGB::RED, 10, i*16+16, false, true);
 		}
 	}
 }
@@ -382,7 +387,9 @@ std::string topMenuSelect(void) {
 	}
 }
 
-std::string browseForFile(const std::vector<std::string>& extensionList, bool directoryNavigation) {
+std::string browseForFile(const std::vector<std::string>& extensionList, bool accessSubdirectories) {
+	char startPath[PATH_MAX];
+	if(!accessSubdirectories)	getcwd(startPath, PATH_MAX);
 	int pressed = 0, held = 0, screenOffset = 0, fileOffset = 0;
 	touchPosition touch;
 	bool bigJump = false;
@@ -428,7 +435,12 @@ std::string browseForFile(const std::vector<std::string>& extensionList, bool di
 		} else if(pressed & KEY_A) {
 			selection:
 			DirEntry* entry = &dirContents.at(fileOffset);
-			if(entry->isDirectory && directoryNavigation) {
+			if(entry->isDirectory) {
+				// Don't go up directory if in the start directory
+				char path[PATH_MAX];
+				getcwd(path, PATH_MAX);
+				if(!accessSubdirectories && entry->name == ".." && (strcmp(startPath, path) == 0))	continue;
+
 				// Enter selected directory
 				chdir(entry->name.c_str());
 				getDirectoryContents(dirContents, extensionList);
@@ -440,7 +452,15 @@ std::string browseForFile(const std::vector<std::string>& extensionList, bool di
 				// Return the chosen file
 				return entry->name;
 			}
-		} else if(pressed & KEY_B && directoryNavigation) {
+		} else if(pressed & KEY_B) {
+			// Don't go up directory if in the start directory
+			char path[PATH_MAX];
+			getcwd(path, PATH_MAX);
+			if(!accessSubdirectories && (strcmp(startPath, path) == 0)) {
+				Sound::play(Sound::back);
+				return "";
+			}
+
 			// Go up a directory
 			if((strcmp (path, "sd:/") == 0) || (strcmp (path, "fat:/") == 0)) {
 				std::string str = topMenuSelect();
@@ -452,10 +472,7 @@ std::string browseForFile(const std::vector<std::string>& extensionList, bool di
 			screenOffset = 0;
 			fileOffset = 0;
 			showDirectoryContents(dirContents, screenOffset);
-		} else if(pressed & KEY_B && !directoryNavigation) {
-			Sound::play(Sound::back);
-			return "";
-		} else if(pressed & KEY_Y && !dirContents[fileOffset].isDirectory && directoryNavigation) {
+		} else if(pressed & KEY_Y && !dirContents[fileOffset].isDirectory && accessSubdirectories) { // accessSubdirectory check is a hack to make it not trigger except in save selection
 			if(loadSave(dirContents[fileOffset].name)) {
 				Sound::play(Sound::click);
 				char path[PATH_MAX];

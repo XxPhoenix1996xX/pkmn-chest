@@ -1,15 +1,15 @@
-#include "misc.h"
+#include "misc.hpp"
 
 #include "banks.hpp"
-#include "colors.h"
-#include "config.h"
-#include "flashcard.h"
-#include "input.h"
-#include "langStrings.h"
-#include "loader.h"
-#include "manager.h"
-#include "summary.h"
-#include "sound.h"
+#include "colors.hpp"
+#include "config.hpp"
+#include "flashcard.hpp"
+#include "input.hpp"
+#include "langStrings.hpp"
+#include "loader.hpp"
+#include "manager.hpp"
+#include "summary.hpp"
+#include "sound.hpp"
 
 struct FormCount {
 	int dexNo;
@@ -82,12 +82,12 @@ void drawMiniBoxes(int currentBox) {
 				// Type 1
 				int type = topScreen ? Banks::bank->pkm(currentBox, j)->type1() : save->pkm(currentBox, j)->type1();
 				if(((topScreen ? Banks::bank->pkm(currentBox, j)->generation() : save->pkm(currentBox, j)->generation()) == Generation::FOUR) && type > 8)	type--;
-				drawRectangle(173+((j-((j/6)*6))*5), 13+((j/6)*5)+(i*33), 2, 4, types[(type*384)+34], false);
+				drawRectangle(173+((j-((j/6)*6))*5), 13+((j/6)*5)+(i*33), 2, 4, types[(type*(typesData.width*(typesData.height/17)))+typesData.width+1], false);
 
 				// Type 2
 				type = topScreen ? Banks::bank->pkm(currentBox, j)->type2() : save->pkm(currentBox, j)->type2();
 				if(((topScreen ? Banks::bank->pkm(currentBox, j)->generation() : save->pkm(currentBox, j)->generation()) == Generation::FOUR) && type > 8)	type--;
-				drawRectangle(175+((j-((j/6)*6))*5), 13+((j/6)*5)+(i*33), 2, 4, types[(type*384)+33], false);
+				drawRectangle(175+((j-((j/6)*6))*5), 13+((j/6)*5)+(i*33), 2, 4, types[(type*(typesData.width*(typesData.height/17)))+typesData.width+1], false);
 			}
 		}
 		// Print box number
@@ -779,7 +779,7 @@ void drawStatsPage(std::shared_ptr<PKX> pkm) {
 
 	// Draw Hidden Power type
 	printText(Lang::hpType, 20, 118, false);
-	drawImageFromSheet(24+getTextWidth(Lang::hpType), 120, 32, 12, types, 32, 0, (pkm->hpType()+1)*12, false);
+	drawImageFromSheet(24+getTextWidth(Lang::hpType), 120, typesData.width, typesData.height/17, types, typesData.width, 0, (pkm->hpType()+1)*(typesData.height/17), false);
 
 }
 
