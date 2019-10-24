@@ -1,7 +1,8 @@
 #include "input.hpp"
-#include <string>
-#include <stdio.h>
+#include <algorithm>
 #include <ctype.h>
+#include <stdio.h>
+#include <string>
 
 #include "config.hpp"
 #include "colors.hpp"
@@ -9,6 +10,8 @@
 #include "langStrings.hpp"
 #include "manager.hpp"
 #include "sound.hpp"
+
+#define u8u16(str) StringUtils::UTF8toUTF16(str)
 
 char16_t iskatakana(char16_t c) { return c >= 0x30A1; }
 char16_t tokatakana(char16_t c) {
@@ -52,7 +55,7 @@ struct Key16 {
 };
 
 bool caps = false, enter = false, katakana = false;
-int changeLayout = -1, loadedLayout = -1, xPos = 0, shift = 0;
+int changeLayout = -1, loadedLayout = -1, xPos = 0, shift = 0, kanaMode = 0;;
 ImageData keyboardData;
 std::u16string string;
 std::vector<u16> keyboard;
@@ -70,7 +73,67 @@ Key keysABC[] = {
 						{"'\"()", 68, 102},	{".,?!", 102, 102},
 };
 
-#define u8u16(str) StringUtils::UTF8toUTF16(str)
+std::vector<Key16> keysDPadABC = {
+	{u8u16("abc."), 112,  40}, //			abc.
+	{u8u16("def!"), 140,  52}, //		wxyz	def!
+	{u8u16("ghi,"), 152,  80}, //	tuv;			ghi,
+	{u8u16("jkl?"), 140, 108}, //		pqrs	jkl?
+	{u8u16("mno:"), 112, 120}, //			mno:
+	{u8u16("pqrs"),  84, 108},
+	{u8u16("tuv;"),  72,  80},
+	{u8u16("wxyz"),  84,  52},
+};
+std::vector<Key16> keysDPadABC2 = {
+	{u8u16("1234"), 112,  40}, //			1234
+	{u8u16("5678"), 140,  52}, //		…•~@	5678
+	{u8u16("90)("), 152,  80}, //	#%+*			90)(
+	{u8u16("=-_|"), 140, 108}, //		♂♀/\	|=_-
+	{u8u16("‘’”“"), 112, 120}, //			‘’”“
+	{u8u16("♂♀/\\"), 84, 108},
+	{u8u16("#%*+"),  72,  80},
+	{u8u16("…・~@"), 84,  52},
+};
+std::vector<Key16> keysDPadABC3 = {
+	{u8u16("abcd"), 112,  60}, //		abcd
+	{u8u16("efgh"), 132,  80}, //	mnop	efgh
+	{u8u16("ijkl"), 112, 100}, //		ijkl
+	{u8u16("mnop"),  92,  80},
+	{u8u16("qrst"), 112,  60}, //		qrst
+	{u8u16("uvwx"), 132,  80}, //	!?)(	uvwx
+	{u8u16("yz.,"), 112, 100}, //		yz.,
+	{u8u16("!?)("),  92,  80},
+};
+std::vector<Key16> keysDPadAIU = {
+	{u8u16("あいうえお"), 112,  40}, //	　　　　　　　　　　あいうえお
+	{u8u16("かきくけこ"), 140,  52}, //	　　　　　や　ゆ　よ　　　　　かきくけこ
+	{u8u16("さしすせそ"), 152,  80}, //	まみむめも　　　　　　　　　　　　　　　さしすせそ
+	{u8u16("たちつてと"), 140, 108}, //	　　　　　はひふへほ　　　　　たちつてと
+	{u8u16("なにぬねの"), 112, 120}, //	　　　　　　　　　　なにぬねの
+	{u8u16("はひふへほ"),  84, 108},
+	{u8u16("まみむめも"),  72,  80},
+	{u8u16("や ゆ よ"),   84,  52},
+};
+std::vector<Key16> keysDPadAIU2 = {
+	{u8u16("ぁぃぅぇぉ"), 112,  40}, //	　　　　　　　　　　ぁぃぅぇぉ
+	{u8u16("がぎぐげご"), 140,  52}, //	　　　　　ゃ　ゅ　ょ　　　　　がぎぐげご
+	{u8u16("ざじずぜぞ"), 152,  80}, //	わをんー　　　　　　　　　　　　　　　　ざじずぜぞ
+	{u8u16("だぢっでど"), 140, 108}, //	　　　　　ばびぶべぼ　　　　　だぢっでど
+	{u8u16("らりるれろ"), 112, 120}, //	　　　　　　　　　　らりるれろ
+	{u8u16("ばびぶべぼ"),  84, 108},
+	{u8u16("わをんー"),    72,  80},
+	{u8u16("ゃ ゅ ょ"),    84,  52},
+};
+std::vector<Key16> keysDPadAIU3 = {
+	{u8u16("ぁぃゔぇぉ"), 112,  40}, //	　　　　　　　　　　ぁぃゔぇぉ
+	{u8u16("がぎぐげご"), 140,  52}, //	　　　　　ゃ　ゅ　ょ　　　　　がぎぐげご
+	{u8u16("ざじずぜぞ"), 152,  80}, //	わをんー　　　　　　　　　　　　　　　　ざじずぜぞ
+	{u8u16("だぢづでど"), 140, 108}, //	　　　　　ぱぴぷぺぽ　　　　　だぢづでど
+	{u8u16("らりるれろ"), 112, 120}, //	　　　　　　　　　　らりるれろ
+	{u8u16("ぱぴぷぺぽ"),  84, 108},
+	{u8u16("わをんー"),    72,  80},
+	{u8u16("ゃ ゅ ょ"),    84,  52},
+};
+
 Key16 keysAIU[] = {
 	{u8u16("あいうえお"), 34,  0},	{u8u16("かきくけこ"), 68,   0},	{u8u16("さしすせそ"), 102,   0},
 	{u8u16("たちつてと"), 34, 34},	{u8u16("なにぬねの"), 68,  34},	{u8u16("はひふへほ"), 102,  34},	{u8u16(" "), 136, 34},
@@ -106,7 +169,7 @@ Key keysSpecialQWE[] = {
 };
 
 void clearVars(void) {
-	string = u8u16(""), caps = false, shift = false, enter = false, katakana = false, changeLayout = -1;
+	string = u8u16(""), caps = false, shift = false, enter = false, katakana = false, changeLayout = -1, kanaMode = 0;
 }
 
 void whileHeld(void) {
@@ -160,6 +223,244 @@ void drawKeyboard(int layout) {
 	}
 }
 
+void processInputABC(u16 held, unsigned maxLength) {
+	u32 prevHeld = 0;
+	while(keysHeld() & (KEY_UP | KEY_DOWN | KEY_LEFT | KEY_RIGHT)) {
+		do {
+			swiWaitForVBlank();
+			scanKeys();
+			held = keysDownRepeat();
+		} while(keysHeld() & (KEY_UP | KEY_DOWN | KEY_LEFT | KEY_RIGHT) && keysHeld() == prevHeld);
+		prevHeld = keysHeld();
+
+		int direction = -1;
+		switch(keysHeld() & (KEY_UP | KEY_DOWN | KEY_LEFT | KEY_RIGHT)) {
+			case KEY_UP:
+				direction = 0;
+				break;
+			case KEY_UP | KEY_RIGHT:
+				direction = 1;
+				break;
+			case KEY_RIGHT:
+				direction = 2;
+				break;
+			case KEY_RIGHT | KEY_DOWN:
+				direction = 3;
+				break;
+			case KEY_DOWN:
+				direction = 4;
+				break;
+			case KEY_DOWN | KEY_LEFT:
+				direction = 5;
+				break;
+			case KEY_LEFT:
+				direction = 6;
+				break;
+			case KEY_LEFT | KEY_UP:
+				direction = 7;
+				break;
+		}
+
+		if(direction != -1) {
+			bool upper = keysHeld() & KEY_R;
+			Key16 *key = (keysHeld() & KEY_L) ? &keysDPadABC2[direction] : &keysDPadABC[direction];
+
+			fillSpriteImageScaled(keyboardSpriteID, false, 0, 0, keyboardKeyData.width, keyboardKeyData.height, 2, keyboardKey);
+			setSpritePosition(keyboardSpriteID, false, key->x, key->y);
+			setSpriteVisibility(keyboardSpriteID, false, true);
+			updateOam();
+
+			std::pair<int, int> offsets[] = {{16, 0}, {24, 8}, {16, 16}, {8, 8}};
+			for(unsigned i=0;i<key->character.size();i++) {
+				std::u16string str = key->character.substr(i, 1);
+				if(upper)	std::transform(str.begin(), str.end(), str.begin(), ::toupper);
+				fillSpriteText(keyboardSpriteID, false, str, WHITE, offsets[i].first-(getTextWidth(str)/2), offsets[i].second, false);
+			}
+		}
+
+		if(held & (KEY_A | KEY_B | KEY_X | KEY_Y)) {
+			int key = -1;
+			switch(held & (KEY_A | KEY_B | KEY_X | KEY_Y)) {
+				case KEY_X:
+					key = 0;
+					break;
+				case KEY_A:
+					key = 1;
+					break;
+				case KEY_B:
+					key = 2;
+					break;
+				case KEY_Y:
+					key = 3;
+					break;
+			}
+
+			if(direction != -1 && key != -1 && key < (int)keysDPadABC[direction].character.size() && string.size() < maxLength) {
+				Key16 *selectedKey = (keysHeld() & KEY_L) ? &keysDPadABC2[direction] : &keysDPadABC[direction];
+				char16_t c = selectedKey->character[key];
+				string += (keysHeld() & KEY_R) ? toupper(c) : c;
+				break;
+			}
+		}
+	}
+}
+
+void processInputABCNoDiagonal(u16 held, unsigned maxLength) {
+	while(keysHeld() & (KEY_UP | KEY_DOWN | KEY_LEFT | KEY_RIGHT)) {
+		u32 prevHeld = 0;
+		do {
+			swiWaitForVBlank();
+			scanKeys();
+			held = keysDownRepeat();
+		} while(keysHeld() & (KEY_UP | KEY_DOWN | KEY_LEFT | KEY_RIGHT) && keysHeld() == prevHeld);
+
+		int direction = -1;
+		switch(keysHeld() & (KEY_UP | KEY_DOWN | KEY_LEFT | KEY_RIGHT)) {
+			case KEY_UP:
+				direction = 0;
+				break;
+			case KEY_RIGHT:
+				direction = 1;
+				break;
+			case KEY_DOWN:
+				direction = 2;
+				break;
+			case KEY_LEFT:
+				direction = 3;
+				break;
+		}
+
+		if(direction != -1) {
+			bool upper = keysHeld() & KEY_R;
+			Key16 *key = &keysDPadABC3[direction + ((keysHeld() & KEY_L) ? 4 : 0)];
+
+			fillSpriteImageScaled(keyboardSpriteID, false, 0, 0, keyboardKeyData.width, keyboardKeyData.height, 2, keyboardKey);
+			setSpritePosition(keyboardSpriteID, false, key->x, key->y);
+			setSpriteVisibility(keyboardSpriteID, false, true);
+			updateOam();
+
+			std::pair<int, int> offsets[] = {{16, 0}, {24, 8}, {16, 16}, {8, 8}};
+			for(unsigned i=0;i<key->character.size();i++) {
+				std::u16string str = key->character.substr(i, 1);
+				if(upper)	std::transform(str.begin(), str.end(), str.begin(), ::toupper);
+				fillSpriteText(keyboardSpriteID, false, str, WHITE, offsets[i].first-(getTextWidth(str)/2), offsets[i].second, false);
+			}
+		}
+
+		if(held & (KEY_A | KEY_B | KEY_X | KEY_Y)) {
+			int key = -1;
+			switch(held & (KEY_A | KEY_B | KEY_X | KEY_Y)) {
+				case KEY_X:
+					key = 0;
+					break;
+				case KEY_A:
+					key = 1;
+					break;
+				case KEY_B:
+					key = 2;
+					break;
+				case KEY_Y:
+					key = 3;
+					break;
+			}
+
+			if(direction != -1 && key != -1 && key < (int)keysDPadABC[direction].character.size() && string.size() < maxLength) {
+				Key16 *selectedKey = &keysDPadABC3[direction + ((keysHeld() & KEY_L) ? 4 : 0)];
+				char16_t c = selectedKey->character[key];
+				string += (keysHeld() & KEY_R) ? toupper(c) : c;
+				break;
+			}
+		}
+	}
+}
+
+void processInputAIU(u16 held, unsigned maxLength) {
+	u16 pressed;
+	while(keysHeld() & (KEY_UP | KEY_DOWN | KEY_LEFT | KEY_RIGHT)) {
+		u32 prevHeld = 0;
+		do {
+			swiWaitForVBlank();
+			scanKeys();
+			held = keysDownRepeat();
+			pressed = keysDown();
+		} while(keysHeld() & (KEY_UP | KEY_DOWN | KEY_LEFT | KEY_RIGHT) && keysHeld() == prevHeld);
+
+		if(pressed & KEY_L) {
+			if(kanaMode < 2) kanaMode++;
+			else kanaMode = 0;
+		}
+
+		int direction = -1;
+		switch(keysHeld() & (KEY_UP | KEY_DOWN | KEY_LEFT | KEY_RIGHT)) {
+			case KEY_UP:
+				direction = 0;
+				break;
+			case KEY_UP | KEY_RIGHT:
+				direction = 1;
+				break;
+			case KEY_RIGHT:
+				direction = 2;
+				break;
+			case KEY_RIGHT | KEY_DOWN:
+				direction = 3;
+				break;
+			case KEY_DOWN:
+				direction = 4;
+				break;
+			case KEY_DOWN | KEY_LEFT:
+				direction = 5;
+				break;
+			case KEY_LEFT:
+				direction = 6;
+				break;
+			case KEY_LEFT | KEY_UP:
+				direction = 7;
+				break;
+		}
+
+		if(direction != -1) {
+			bool katakana = keysHeld() & KEY_R;
+			Key16 *key = (kanaMode == 0) ? &keysDPadAIU[direction] : (kanaMode == 1) ? &keysDPadAIU2[direction] : &keysDPadAIU3[direction];
+
+			fillSpriteImageScaled(keyboardSpriteID, false, 0, 0, keyboardKeyData.width, keyboardKeyData.height, 2, keyboardKey);
+			setSpritePosition(keyboardSpriteID, false, key->x, key->y);
+			setSpriteVisibility(keyboardSpriteID, false, true);
+			updateOam();
+
+			std::u16string str; str += katakana ? tokatakana(key->character[0]) : key->character[0];
+			fillSpriteText(keyboardSpriteID, false, str, WHITE, 16-(getTextWidth(str)/2), 8, false);
+		}
+
+		if(held & (KEY_A | KEY_B | KEY_X | KEY_Y | KEY_START)) {
+			int key = -1;
+			switch(held & (KEY_A | KEY_B | KEY_X | KEY_Y | KEY_START)) {
+				case KEY_START:
+					key = 0;
+					break;
+				case KEY_Y:
+					key = 1;
+					break;
+				case KEY_X:
+					key = 2;
+					break;
+				case KEY_A:
+					key = 3;
+					break;
+				case KEY_B:
+					key = 4;
+					break;
+			}
+
+			if(direction != -1 && key != -1 && key < (int)keysDPadAIU[direction].character.size() && string.size() < maxLength) {
+				Key16 *selectedKey = (kanaMode == 0) ? &keysDPadAIU[direction] : (kanaMode == 1) ? &keysDPadAIU2[direction] : &keysDPadAIU3[direction];
+				char16_t c = selectedKey->character[key];
+				string += (keysHeld() & KEY_R) ? tokatakana(c) : c;
+				break;
+			}
+		}
+	}
+}
+
 void processTouch123(touchPosition touch, unsigned maxLength) {
 	if(string.length() < maxLength) {
 		// Check if a number key was pressed
@@ -187,7 +488,7 @@ void processTouch123(touchPosition touch, unsigned maxLength) {
 					}
 				}
 			} else if(keysSpecialKana[i].character == "entr") {
-				drawRectangle(keysSpecialKana[3].x+xPos, keysSpecialKana[3].y+(192-keyboardData.height), 32, 64, GRAY, false);
+				drawRectangle(keysSpecialKana[4].x+xPos, keysSpecialKana[4].y+(192-keyboardData.height), 32, 64, GRAY, false);
 				whileHeld();
 				enter = true;
 			} else if(keysSpecialKana[i].character == "123") {
@@ -263,7 +564,7 @@ void processTouchABC(touchPosition touch, unsigned maxLength) {
 					}
 				}
 			} else if(keysSpecialKana[i].character == "entr") {
-				drawRectangle(keysSpecialKana[3].x+xPos, keysSpecialKana[3].y+(192-keyboardData.height), 32, 64, GRAY, false);
+				drawRectangle(keysSpecialKana[4].x+xPos, keysSpecialKana[4].y+(192-keyboardData.height), 32, 64, GRAY, false);
 				whileHeld();
 				enter = true;
 			} else if(keysSpecialKana[i].character == "shft") {
@@ -347,7 +648,7 @@ void processTouchAIU(touchPosition touch, unsigned maxLength) {
 					}
 				}
 			} else if(keysSpecialKana[i].character == "entr") {
-				drawRectangle(keysSpecialKana[3].x+xPos, keysSpecialKana[3].y+(192-keyboardData.height), 32, 64, GRAY, false);
+				drawRectangle(keysSpecialKana[4].x+xPos, keysSpecialKana[4].y+(192-keyboardData.height), 32, 64, GRAY, false);
 				whileHeld();
 				enter = true;
 			} else if(keysSpecialKana[i].character == "shft") {
@@ -477,7 +778,7 @@ std::string Input::getLine(unsigned maxLength) {
 				cursorBlink = 31;
 			}
 			cursorBlink--;
-		} while(!held);
+		} while(!keysHeld());
 			if(caps) drawRectangle(keysSpecialQWE[1].x, keysSpecialQWE[1].y+(192-keyboardData.height), 16, 16, GRAY, false);
 
 		if((loadedLayout == 3 ? held : pressed) & KEY_TOUCH) {
@@ -496,10 +797,24 @@ std::string Input::getLine(unsigned maxLength) {
 			// If caps lock / shift are on, highlight the key
 			if(caps)	drawRectangle(keysSpecialQWE[1].x, keysSpecialQWE[1].y+(192-keyboardData.height), 16, 16, GRAY, false);
 			if(shift)	drawRectangle(keysSpecialQWE[2+shift].x, keysSpecialQWE[2+shift].y+(192-keyboardData.height), 26, 16, GRAY, false);
+		} else if(keysHeld() & (KEY_UP | KEY_DOWN | KEY_LEFT | KEY_RIGHT)) {
+			if(loadedLayout == 2)	processInputAIU(held, maxLength);
+			else if(loadedLayout == 3)	processInputABCNoDiagonal(held, maxLength); // for now just use the simple one on qwerty
+			else	processInputABC(held, maxLength);
+
+			// Hide sprite
+			setSpriteVisibility(keyboardSpriteID, false, false);
+			updateOam();
+
+			// Print string
+			drawRectangle(0, 192-keyboardData.height-16, 256, 16, BLACK, false);
+			printText(string + (cursorBlink ? u8u16("_") : u8u16("")), 0, 192-keyboardData.height-16, false);
 		} else if(held & KEY_B) {
-			if(loadedLayout < 3)	drawRectangle(keysSpecialKana[1].x+xPos, keysSpecialKana[1].y+(192-keyboardData.height), 32, 32, DARK_GRAY, false);
-			else	drawRectangle(keysSpecialQWE[0].x, keysSpecialQWE[0].y+(192-keyboardData.height), 16, 16, DARK_GRAY, false);
 			string = string.substr(0, string.length()-1);
+			drawRectangle(0, 192-keyboardData.height-16, 256, 16, BLACK, false);
+			printText(string, 0, 192-keyboardData.height-16, false);
+		} else if(held & KEY_Y) {
+			string += u8u16(" ");
 			drawRectangle(0, 192-keyboardData.height-16, 256, 16, BLACK, false);
 			printText(string, 0, 192-keyboardData.height-16, false);
 		}
@@ -556,11 +871,11 @@ int Input::getInt(unsigned max) {
 			
 			// Redraw keyboard to cover up highlight
 			drawKeyboard(loadedLayout);
+
 			// Print string
 			drawRectangle(0, 192-keyboardData.height-16, 256, 16, BLACK, false);
 			printText(string + (cursorBlink ? u8u16("_") : u8u16("")), 0, 192-keyboardData.height-16, false);
 		} else if(held & KEY_B) {
-			drawRectangle(keysSpecialKana[1].x+xPos, keysSpecialKana[1].y+(192-keyboardData.height), 32, 32, DARK_GRAY, false);
 			string = string.substr(0, string.length()-1);
 			drawRectangle(0, 192-keyboardData.height-16, 256, 16, BLACK, false);
 			printText(string, 0, 192-keyboardData.height-16, false);
