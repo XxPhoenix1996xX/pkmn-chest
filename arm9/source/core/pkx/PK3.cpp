@@ -1,6 +1,37 @@
 #include "PK3.hpp"
+#include "langStrings.hpp"
 #include "random.hpp"
 #include "speciesConverter.hpp"
+
+void PK3::shuffleArray(u8 sv) {
+	static const int blockLength = 32;
+	u8 index                     = sv * 4;
+
+	u8 cdata[length];
+	std::copy(data, data + length, cdata);
+
+	for(u8 block = 0; block < 4; block++) {
+		u8 ofs = blockPosition(index + block);
+		std::copy(cdata + 8 + blockLength * ofs, cdata + 8 + blockLength * ofs + blockLength, data + 8 + blockLength * block);
+	}
+}
+
+void PK3::crypt(void) {
+	u32 seed = checksum();
+
+	for(int i = 0x08; i < 136; i += 2) {
+		seed = seedStep(seed);
+		data[i] ^= (seed >> 16);
+		data[i + 1] ^= (seed >> 24);
+	}
+
+	seed = PID();
+	for(u32 i = 136; i < length; i += 2) {
+		seed = seedStep(seed);
+		data[i] ^= (seed >> 16);
+		data[i + 1] ^= (seed >> 24);
+	}
+}
 
 int PK3::swapBits(int value, int p1, int p2) const {
 	int bit1 = (value >> p1) & 1;
@@ -357,3 +388,130 @@ void PK3::partyStat(const u8 stat, u16 v) {
 		*(u16*)(data + 0x58 + stat * 2) = v;
 	}
 }
+
+std::shared_ptr<PKX> PK3::next(void) const {
+	time_t t = time(NULL);
+	struct tm* timeStruct = gmtime((const time_t*)&t);
+
+	std::shared_ptr<PKX> pk4 = std::make_shared<PK4>();
+
+	pk4->PID(PID());
+	pk4->species(species());
+	pk4->TID(TID());
+	pk4->SID(SID());
+	// pk4->experience(egg() ? Experience.GetEXP(5, Species, 0) : experience()),
+	pk4->egg(false);
+	pk4->otFriendship(70);
+	pk4->markValue(markValue());
+	pk4->language(language());
+	pk4->ev(0, ev(0));
+	pk4->ev(1, ev(1));
+	pk4->ev(2, ev(2));
+	pk4->ev(3, ev(3));
+	pk4->ev(4, ev(4));
+	pk4->ev(5, ev(5));
+	pk4->contest(0, contest(0));
+	pk4->contest(1, contest(1));
+	pk4->contest(2, contest(2));
+	pk4->contest(3, contest(3));
+	pk4->contest(4, contest(4));
+	pk4->contest(5, contest(5));
+	pk4->move(0, move(0));
+	pk4->move(1, move(1));
+	pk4->move(2, move(2));
+	pk4->move(3, move(3));
+	pk4->PPUp(0, PPUp(0));
+	pk4->PPUp(1, PPUp(1));
+	pk4->PPUp(2, PPUp(2));
+	pk4->PPUp(3, PPUp(3));
+	pk4->iv(0, iv(0));
+	pk4->iv(1, iv(1));
+	pk4->iv(2, iv(2));
+	pk4->iv(3, iv(3));
+	pk4->iv(4, iv(4));
+	pk4->iv(5, iv(5));
+	pk4->ability(ability());
+	pk4->version(version());
+	pk4->ball(ball());
+	pk4->pkrsStrain(pkrsStrain());
+	pk4->pkrsDays(pkrsDays());
+	pk4->otGender(otGender());
+	pk4->metYear(timeStruct->tm_year - 100);
+	pk4->metMonth(timeStruct->tm_mon + 1);
+	pk4->metDay(timeStruct->tm_mday);
+	pk4->metLocation(0x37); // Pal Park
+
+	// RibbonChampionG3Hoenn = RibbonChampionG3Hoenn,
+	// RibbonWinning = RibbonWinning,
+	// RibbonVictory = RibbonVictory,
+	// RibbonArtist = RibbonArtist,
+	// RibbonEffort = RibbonEffort,
+	// RibbonChampionBattle = RibbonChampionBattle,
+	// RibbonChampionRegional = RibbonChampionRegional,
+	// RibbonChampionNational = RibbonChampionNational,
+	// RibbonCountry = RibbonCountry,
+	// RibbonNational = RibbonNational,
+	// RibbonEarth = RibbonEarth,
+	// RibbonWorld = RibbonWorld,
+
+	pk4->fatefulEncounter(fatefulEncounter());
+
+	// pk4.RibbonG3Cool			|= RibbonCountG3Cool > 0;
+	// pk4.RibbonG3CoolSuper	|= RibbonCountG3Cool > 1;
+	// pk4.RibbonG3CoolHyper	|= RibbonCountG3Cool > 2;
+	// pk4.RibbonG3CoolMaster	|= RibbonCountG3Cool > 3;
+	// pk4.RibbonG3Beauty		|= RibbonCountG3Beauty > 0;
+	// pk4.RibbonG3BeautySuper	|= RibbonCountG3Beauty > 1;
+	// pk4.RibbonG3BeautyHyper	|= RibbonCountG3Beauty > 2;
+	// pk4.RibbonG3BeautyMaster	|= RibbonCountG3Beauty > 3;
+	// pk4.RibbonG3Cute			|= RibbonCountG3Cute > 0;
+	// pk4.RibbonG3CuteSuper	|= RibbonCountG3Cute > 1;
+	// pk4.RibbonG3CuteHyper	|= RibbonCountG3Cute > 2;
+	// pk4.RibbonG3CuteMaster	|= RibbonCountG3Cute > 3;
+	// pk4.RibbonG3Smart		|= RibbonCountG3Smart > 0;
+	// pk4.RibbonG3SmartSuper	|= RibbonCountG3Smart > 1;
+	// pk4.RibbonG3SmartHyper	|= RibbonCountG3Smart > 2;
+	// pk4.RibbonG3SmartMaster	|= RibbonCountG3Smart > 3;
+	// pk4.RibbonG3Tough		|= RibbonCountG3Tough > 0;
+	// pk4.RibbonG3ToughSuper	|= RibbonCountG3Tough > 1;
+	// pk4.RibbonG3ToughHyper	|= RibbonCountG3Tough > 2;
+	// pk4.RibbonG3ToughMaster	|= RibbonCountG3Tough > 3;
+
+
+	// Yay for reusing string buffers!
+	// var trash = StringConverter345.G4TransferTrashBytes;
+	// if (pk4.Language < trash.Length)
+	// 	trash[pk4.Language].CopyTo(pk4.Data, 0x48 + 4);
+	pk4->nickname(egg() ? Lang::species[species()] : nickname());
+	memcpy(pk4->rawData()+0x68, data+0x48, 0x10);
+	pk4->otName(otName());
+
+	// Set Final Data
+	pk4->metLevel(level());
+	// pk4.Gender = PKX.GetGenderFromPID(pk4.Species, pk4.PID);
+	pk4->gender(gender());
+	pk4->nicknamed(nicknamed());
+
+	// Unown Form
+	pk4->alternativeForm(alternativeForm());
+
+	// if(HeldItem > 0) {
+	// 	ushort item = ItemConverter.GetG4Item((ushort)HeldItem);
+	// 	if (ItemConverter.IsItemTransferable34(item))
+	// 		pk4.HeldItem = item;
+	// }
+
+	// Remove HM moves
+	u16 moves[4] = {move(0), move(1), move(2), move(3)};
+	for (int i = 0; i < 4; i++) {
+		// if(std::find(banned, banned + 8, moves[i]) != banned + 8) {
+		// 	moves[i] = 0;
+		// }
+		pk4->move(i, moves[i]);
+	}
+	pk4->fixMoves();
+
+	pk4->refreshChecksum();
+	return pk4;
+}
+

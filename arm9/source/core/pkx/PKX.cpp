@@ -25,6 +25,7 @@
  */
 
 #include "PKX.hpp"
+#include "PK3.hpp"
 #include "PK4.hpp"
 #include "PK5.hpp"
 
@@ -402,15 +403,17 @@ u32 PKX::formatSID() const {
 
 std::shared_ptr<PKX> PKX::getPKM(Generation gen, u8* data, bool ekx, bool party) {
 	switch(gen) {
+		case Generation::THREE:
+			return std::make_shared<PK3>(data, ekx, party);
 		case Generation::FOUR:
 			return std::make_shared<PK4>(data, ekx, party);
 		case Generation::FIVE:
 			return std::make_shared<PK5>(data, ekx, party);
-		case Generation::SIX:
+		// case Generation::SIX:
 			// return std::make_shared<PK6>(data, ekx, party);
-		case Generation::SEVEN:
+		// case Generation::SEVEN:
 			// return std::make_shared<PK7>(data, ekx, party);
-		case Generation::LGPE:
+		// case Generation::LGPE:
 			// return std::make_shared<PB7>(data, ekx);
 		default:
 			return nullptr;
