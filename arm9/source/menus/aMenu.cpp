@@ -273,16 +273,24 @@ int aMenu(int pkmPos, std::vector<std::pair<int, int>>& buttons, int buttonMode)
 				chdir(sdFound() ? "sd:/_nds/pkmn-chest/in" : "fat:/_nds/pkmn-chest/in");
 
 				// Get a pk4/5
-				std::vector<std::string> extList = {"pk4", "pk5"};
-				std::string fileName = browseForFile(extList, false);
+				std::string fileName = browseForFile({"pk3", "pk4", "pk5"}, false);
 
 				// If the fileName isn't blank, inject the Pokémon
 				if(fileName != "") {
 					FILE* in = fopen(fileName.c_str(), "rb");
 					u8* buffer = 0;
 					fread(buffer, 1, 136, in);
-					if(topScreen)	Banks::bank->pkm(save->emptyPkm()->getPKM(fileName.substr(fileName.size()-1) == "4" ? Generation::FOUR : Generation::FIVE, buffer), currentBankBox, pkmPos);
-					else	save->pkm(save->emptyPkm()->getPKM(fileName.substr(fileName.size()-1) == "4" ? Generation::FOUR : Generation::FIVE, buffer), currentSaveBox, pkmPos, false);
+					std::string verNo = fileName.substr(fileName.size()-1);
+					Generation pkGen = Generation::UNUSED;
+					if(verNo == "3") {
+						pkGen = Generation::THREE;
+					} else if(verNo == "4") {
+						pkGen = Generation::FOUR;
+					} else if(verNo == "5") {
+						pkGen = Generation::FIVE;
+					}
+					if(topScreen)	Banks::bank->pkm(save->emptyPkm()->getPKM(pkGen, buffer), currentBankBox, pkmPos);
+					else	save->pkm(save->emptyPkm()->getPKM(pkGen, buffer), currentSaveBox, pkmPos, false);
 				}
 
 				// Reset & redraw screen
