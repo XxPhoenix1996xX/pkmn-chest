@@ -25,8 +25,8 @@ include $(DEVKITARM)/ds_rules
 #---------------------------------------------------------------------------------
 all	:	checkarm9 $(TARGET).nds
 
-skip-gs	:	checkarm9 lang $(NITRO_FILES) arm9/$(TARGET).elf
-	ndstool	-c $(TARGET).nds -9 arm9/$(TARGET).elf \
+skip-gs	:	checkarm9 lang $(NITRO_FILES) arm7/$(TARGET).elf arm9/$(TARGET).elf
+	ndstool	-c $(TARGET).nds -7 arm7/$(TARGET).elf -9 arm9/$(TARGET).elf \
 	-b1 icon.bmp "$(GAME_TITLE);$(GAME_SUBTITLE1)" $(_ADDFILES) \
 	-z 80040000 -u 00030004 -a 00000138
 
@@ -47,13 +47,12 @@ lang:
 	@echo i18n strings ...
 
 #---------------------------------------------------------------------------------
-$(TARGET).nds	: graphics lang $(NITRO_FILES) arm9/$(TARGET).elf
 sound:
 	$(MAKE) -C sound
 
 #---------------------------------------------------------------------------------
-$(TARGET).nds	: graphics sound $(NITRO_FILES) arm9/$(TARGET).elf
-	ndstool	-c $(TARGET).nds -9 arm9/$(TARGET).elf \
+$(TARGET).nds	: graphics sound $(NITRO_FILES) arm7/$(TARGET).elf arm9/$(TARGET).elf
+	ndstool	-c $(TARGET).nds -7 arm7/$(TARGET).elf -9 arm9/$(TARGET).elf \
 	-b1 icon.bmp "$(GAME_TITLE);$(GAME_SUBTITLE1)" $(_ADDFILES) \
 	-z 80040000 -u 00030004 -a 00000138
 
@@ -61,11 +60,14 @@ $(TARGET).nds	: graphics sound $(NITRO_FILES) arm9/$(TARGET).elf
 arm9/$(TARGET).elf:
 	$(MAKE) -C arm9
 
-cia	:	arm9/$(TARGET).elf
-	ndstool	-c $(TARGET).temp -9 arm9/$(TARGET).elf \
-	-b1 icon.bmp "$(GAME_TITLE);$(GAME_SUBTITLE1)" \
-	-z 80040000 -u 00030004 -a 00000138
-	make_cia --srl="pkmn-chest.temp"
+arm7/$(TARGET).elf:
+	$(MAKE) -C arm7
+
+cia	:	$(NITRO_FILES) arm7/$(TARGET).elf arm9/$(TARGET).elf
+	ndstool	-c $(TARGET).temp -7 arm7/$(TARGET).elf -9 arm9/$(TARGET).elf \
+	-b1 icon.bmp "$(GAME_TITLE);$(GAME_SUBTITLE1)" $(_ADDFILES) \
+	-g PKCH 01 "PKMN-CHEST" -z 80040000 -u 00030004 -a 00000138
+	./make_cia.exe --srl="pkmn-chest.temp"
 	rm pkmn-chest.temp
 
 #---------------------------------------------------------------------------------

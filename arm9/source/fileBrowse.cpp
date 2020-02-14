@@ -7,7 +7,7 @@
 
 #include "colors.hpp"
 #include "config.hpp"
-#include "flashcard.hpp"
+#include "drives.hpp"
 #include "graphics.hpp"
 #include "i18n.hpp"
 #include "input.hpp"
@@ -424,6 +424,7 @@ std::string topMenuSelect(void) {
 }
 
 std::string browseForFile(const std::vector<std::string>& extensionList, bool accessSubdirectories, bool canChooseDirs) {
+	chdir("nand:/");
 	char startPath[PATH_MAX];
 	if(!accessSubdirectories)	getcwd(startPath, PATH_MAX);
 	int pressed, held, screenOffset = 0, fileOffset = 0;

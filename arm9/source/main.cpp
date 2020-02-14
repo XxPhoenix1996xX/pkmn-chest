@@ -3,8 +3,8 @@
 #include "banks.hpp"
 #include "colors.hpp"
 #include "config.hpp"
+#include "drives.hpp"
 #include "fileBrowse.hpp"
-#include "flashcard.hpp"
 #include "graphics.hpp"
 #include "gui.hpp"
 #include "i18n.hpp"
@@ -47,6 +47,9 @@ int main(int argc, char **argv) {
 	mkdir(sdFound() ? "sd:/_nds/pkmn-chest/out" : "fat:/_nds/pkmn-chest/out", 0777);
 	mkdir(sdFound() ? "sd:/_nds/pkmn-chest/themes" : "fat:/_nds/pkmn-chest/themes", 0777);
 
+	// Mount NAND
+	
+
 	// Try to init NitroFS from argv provided to the game when it was launched
 	if(!nitroFSInit(argv[0])) {
 		// If that fails, try to init NitroFS on 'pkmn-chest.nds'
@@ -87,6 +90,23 @@ int main(int argc, char **argv) {
 	loadTypes(Config::getLang("lang"));
 
 	hideLoadingLogo();
+
+	Gui::prompt(std::to_string(nandMount()));
+
+	// Gui::prompt("nand"+std::to_string(access("nand:/", F_OK)));
+
+	// Gui::prompt("title"+std::to_string(access("nand:/title/00030004/504b4348/content/", F_OK)));
+
+	// Gui::prompt("nand"+std::to_string(access("nand:/", F_OK)));
+	// // if(access("nand:/title/00030004/504b4348/content/", F_OK) == 0) {
+	// 	chdir("nand:/");
+	// 	std::vector<DirEntry> dirContents;
+	// 	getDirectoryContents(dirContents, {""});
+	// 	Gui::prompt(dirContents[0].name);
+	// 	Gui::prompt(dirContents[1].name);
+	// 	Gui::prompt(dirContents[2].name);
+	// 	// nitroFSInit(dirContents[1].name.c_str());
+	// // }
 
 	while(1) {
 		savePath = browseForSave();

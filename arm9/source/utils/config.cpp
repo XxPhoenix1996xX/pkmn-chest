@@ -2,7 +2,7 @@
 #include <nds/system.h>
 
 #include "json.hpp"
-#include "flashcard.hpp"
+#include "drives.hpp"
 
 nlohmann::json configJson;
 

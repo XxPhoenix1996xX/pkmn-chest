@@ -3,8 +3,13 @@
 #include <stdio.h>
 #include <sys/stat.h>
 
+#include "nandio.h"
+
 static bool sdAccessed = false;
 static bool sdRead = false;
+
+static bool nandAccessed = false;
+static bool nandRead = false;
 
 static bool flashcardAccessed = false;
 static bool flashcardRead = false;
@@ -33,10 +38,30 @@ bool flashcardFound(void) {
 	return flashcardRead;
 }
 
+bool nandFound(void) {
+	if (!nandAccessed) {
+		if (access("nand:/", F_OK) == 0) {
+			nandRead = true;
+		} else {
+			nandRead = false;
+		}
+		nandAccessed = true;
+	}
+	return nandRead;
+}
+
 bool bothSDandFlashcard(void) {
 	if (sdFound() && flashcardFound()) {
 		return true;
 	} else {
 		return false;
 	}
+}
+
+TWL_CODE bool nandMount(void) {
+	fatMountSimple("nand", &io_dsi_nand);
+	if (nandFound()) {
+		return true;
+	}
+	return false;
 }
